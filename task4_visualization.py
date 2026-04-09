@@ -1,4 +1,3 @@
-# task4_visualization.py
 # TrendPulse - Task 4: Visualizations using Matplotlib
 # Author: Muskan
 # Date: April 2026
@@ -7,9 +6,7 @@ import pandas as pd               # for loading the CSV
 import matplotlib.pyplot as plt   # for creating all charts
 import os                         # for creating the outputs/ folder
 
-# -------------------------------------------------------------------
 # STEP 1: Load the analysed CSV from Task 3 and create outputs/ folder
-# -------------------------------------------------------------------
 
 # Load the CSV that was saved by Task 3
 df = pd.read_csv("data/trends_analysed.csv")
@@ -19,10 +16,7 @@ print(f"Loaded {len(df)} stories for visualization.")
 # Create outputs/ folder if it doesn't already exist
 os.makedirs("outputs", exist_ok=True)
 
-
-# -------------------------------------------------------------------
 # CHART 1: Top 10 Stories by Score — Horizontal Bar Chart
-# -------------------------------------------------------------------
 
 # Sort by score descending and take top 10 rows
 top10 = df.sort_values("score", ascending=False).head(10)
@@ -55,10 +49,7 @@ plt.close()   # close figure to free memory
 
 print("Saved: outputs/chart1_top_stories.png")
 
-
-# -------------------------------------------------------------------
 # CHART 2: Stories per Category — Bar Chart with different colours
-# -------------------------------------------------------------------
 
 # Count how many stories are in each category
 category_counts = df["category"].value_counts()
@@ -81,11 +72,9 @@ plt.close()
 
 print("Saved: outputs/chart2_categories.png")
 
-
-# -------------------------------------------------------------------
 # CHART 3: Score vs Comments — Scatter Plot
 # Popular stories get a different colour using the is_popular column
-# -------------------------------------------------------------------
+
 
 # Split into two groups based on is_popular column
 popular     = df[df["is_popular"] == True]
@@ -112,31 +101,28 @@ plt.close()
 
 print("Saved: outputs/chart3_scatter.png")
 
-
-# -------------------------------------------------------------------
 # BONUS — Dashboard: All 3 charts combined into one single figure
 # plt.subplots(1, 3) creates 1 row with 3 panels side by side
-# -------------------------------------------------------------------
 
 fig, axes = plt.subplots(1, 3, figsize=(22, 6))
 
 # Overall title for the entire dashboard figure
 fig.suptitle("TrendPulse Dashboard", fontsize=16, fontweight="bold")
 
-# --- Panel 1: Top 10 Stories by Score ---
+# Panel 1: Top 10 Stories by Score 
 axes[0].barh(top10["short_title"][::-1], top10["score"][::-1], color="steelblue")
 axes[0].set_title("Top 10 Stories by Score")
 axes[0].set_xlabel("Score")
 axes[0].set_ylabel("Story Title")
 axes[0].tick_params(axis="y", labelsize=7)   # smaller font so titles fit
 
-# --- Panel 2: Stories per Category ---
+#  Panel 2: Stories per Category 
 axes[1].bar(category_counts.index, category_counts.values, color=colours)
 axes[1].set_title("Stories per Category")
 axes[1].set_xlabel("Category")
 axes[1].set_ylabel("Number of Stories")
 
-# --- Panel 3: Score vs Comments Scatter ---
+#  Panel 3: Score vs Comments Scatter  
 axes[2].scatter(not_popular["score"], not_popular["num_comments"],
                 color="steelblue", alpha=0.6, label="Not Popular")
 axes[2].scatter(popular["score"], popular["num_comments"],
