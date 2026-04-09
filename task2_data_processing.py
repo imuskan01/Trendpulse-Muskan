@@ -1,10 +1,10 @@
 # TrendPulse - Task 2: Clean the data and save as CSV
 # Author: [Muskan]
 
-import pandas as pd   # for loading, cleaning, and saving data
-import json           # for reading the JSON file
-import os             # for finding the file in the data/ folder
-import glob           # for finding the file without knowing exact date
+import pandas as pd    
+import json            
+import os              
+import glob            
 
 # STEP 1: Find and load the JSON file from Task 1
 # We use glob to find the file without hardcoding the date in the name
