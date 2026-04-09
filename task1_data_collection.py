@@ -1,5 +1,7 @@
+# task1_data_collection.py
 # TrendPulse - Task 1: Fetch trending stories from HackerNews API
-# Author: [Muskan]
+# Author: Muskan
+# Date: April 2026
 
 import requests
 import json
@@ -8,6 +10,7 @@ import os
 from datetime import datetime
 
 # Categories and keywords for matching story titles
+# HackerNews is tech-heavy so sports/entertainment use a fallback strategy
 CATEGORIES = {
     "technology":    ["ai", "software", "tech", "code", "computer", "data", "cloud", "api", "gpu", "llm", "python", "model", "developer", "open source"],
     "worldnews":     ["war", "government", "country", "president", "election", "climate", "attack", "global", "policy", "military", "russia", "china"],
@@ -21,17 +24,17 @@ MAX_PER_CATEGORY = 25
 
 
 def assign_category(title):
-    # Lowercase the title once, then check each category's keywords
+    # Lowercase the title once so keyword matching is case-insensitive
     title_lower = title.lower()
     for category, keywords in CATEGORIES.items():
         for keyword in keywords:
             if keyword in title_lower:
                 return category
-    return "unmatched"    
+    return "unmatched"   # no keyword matched
 
 
 def fetch_top_story_ids():
-    # Get the top 1000 story IDs from HackerNews
+    # Fetch top 1000 story IDs from HackerNews
     url = "https://hacker-news.firebaseio.com/v0/topstories.json"
     try:
         response = requests.get(url, headers=HEADERS)
@@ -44,7 +47,7 @@ def fetch_top_story_ids():
 
 
 def fetch_story(story_id):
-    # Fetch one story's details and return None if anything fails
+    # Fetch details of one story — return None if anything fails
     url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
     try:
         response = requests.get(url, headers=HEADERS)
@@ -56,13 +59,13 @@ def fetch_story(story_id):
 
 
 def build_record(story, category):
-    # Build the clean 7 field record required by the task
+    # Build the 7-field record required by the task
     return {
         "post_id":      story.get("id"),
         "title":        story.get("title", ""),
         "category":     category,
         "score":        story.get("score", 0),
-        "num_comments": story.get("descendants", 0),  
+        "num_comments": story.get("descendants", 0),  # HN calls comments 'descendants'
         "author":       story.get("by", "unknown"),
         "collected_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -70,6 +73,9 @@ def build_record(story, category):
 
 def collect_stories(story_ids):
     collected = {category: [] for category in CATEGORIES}
+
+    # seen_ids prevents the same story appearing in multiple categories
+    seen_ids = set()
 
     for category in CATEGORIES:
         print(f"\n  Collecting stories for: [{category}]")
@@ -83,46 +89,49 @@ def collect_stories(story_ids):
             print(f"    Checking story ID: {story_id}...")
             story = fetch_story(story_id)
 
-            # Skip if fetch failed or no title (jobs/polls have no title)
+            # Skip failed fetches or items with no title (jobs, polls etc.)
             if not story or "title" not in story:
+                continue
+
+            # THIS IS THE KEY FIX — skip stories already saved in another category
+            if story.get("id") in seen_ids:
                 continue
 
             title = story.get("title", "")
             assigned = assign_category(title)
 
             if assigned == category:
-                # Keyword matched this category — accept it
+                # Keyword matched — accept and mark as seen
                 collected[category].append(build_record(story, category))
+                seen_ids.add(story.get("id"))
 
             elif assigned == "unmatched" and len(collected[category]) < 20:
-                # No keyword matched anywhere AND this category needs filling 
-
+                # Fallback for categories rare on HackerNews (sports/entertainment)
                 collected[category].append(build_record(story, category))
+                seen_ids.add(story.get("id"))
 
         print(f"  Finished [{category}]: {len(collected[category])} stories")
-        time.sleep(2)  # wait 2 seconds between categories as required
+        time.sleep(2)   # wait 2 seconds between categories as required
 
     return collected
 
 
 def save_to_json(collected):
-    # Combine all category lists into one flat list
+    # Flatten all category lists into one list
     all_stories = []
     for stories in collected.values():
         all_stories.extend(stories)
 
-    # Create data/ folder if it doesn't exist
     os.makedirs("data", exist_ok=True)
 
     today = datetime.now().strftime("%Y%m%d")
     filename = f"data/trends_{today}.json"
 
     with open(filename, "w") as f:
-        json.dump(all_stories, f, indent=2)  
+        json.dump(all_stories, f, indent=2)
 
     print(f"\nCollected {len(all_stories)} stories. Saved to {filename}")
 
-    # Show breakdown so we can verify each category
     print("\nBreakdown by category:")
     for category, stories in collected.items():
         print(f"  {category}: {len(stories)} stories")
